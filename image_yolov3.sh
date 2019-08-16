@@ -1,6 +1,4 @@
 
 
-./darknet detector test ./cfg/coco.data ./cfg/yolov3.cfg ./yolov3.weights data/dog.jpg -i 0 -thresh 0.25
-
-
+./darknet detector test data/coco.data ./cfg/yolov3-spp.cfg ./cfg/yolov3-spp.weights /home/mark/darknet/data/people_waterfall2_2019-07-2420-32-07-144.jpg -i 0 
 
