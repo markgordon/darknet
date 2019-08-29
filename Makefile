@@ -1,10 +1,10 @@
 GPU=0
 CUDNN=0
 CUDNN_HALF=0
-OPENCV=0
-AVX=0
-OPENMP=0
-LIBSO=0
+OPENCV=1
+AVX=1
+OPENMP=1
+LIBSO=1
 ZED_CAMERA=0
 
 # set GPU=1 and CUDNN=1 to speedup on GPU
@@ -74,10 +74,9 @@ endif
 CFLAGS+=$(OPTS)
 
 ifeq ($(OPENCV), 1)
-COMMON+= -DOPENCV
+COMMON+= -DOPENCV -I/usr/local/include/opencv4
 CFLAGS+= -DOPENCV
-LDFLAGS+= `pkg-config --libs opencv`
-COMMON+= `pkg-config --cflags opencv`
+LDFLAGS+= -lopencv_calib3d -lopencv_core -lopencv_dnn -lopencv_features2d -lopencv_flann -lopencv_gapi -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc -lopencv_ml -lopencv_objdetect -lopencv_photo -lopencv_stitching -lopencv_videoio -lopencv_video
 endif
 
 ifeq ($(OPENMP), 1)
