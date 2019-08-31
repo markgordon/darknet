@@ -535,6 +535,8 @@ layer parse_reorg_old(list *options, size_params params)
 maxpool_layer parse_maxpool(list *options, size_params params)
 {
     int stride = option_find_int(options, "stride",1);
+    int stride_x = option_find_int_quiet(options, "stride_x", stride);
+    int stride_y = option_find_int_quiet(options, "stride_y", stride);
     int size = option_find_int(options, "size",stride);
     int padding = option_find_int_quiet(options, "padding", size-1);
     int maxpool_depth = option_find_int_quiet(options, "maxpool_depth", 0);
@@ -547,7 +549,7 @@ maxpool_layer parse_maxpool(list *options, size_params params)
     batch=params.batch;
     if(!(h && w && c)) error("Layer before maxpool layer must output image.");
 
-    maxpool_layer layer = make_maxpool_layer(batch, h, w, c, size, stride, padding, maxpool_depth, out_channels);
+    maxpool_layer layer = make_maxpool_layer(batch, h, w, c, size, stride_x, stride_y, padding, maxpool_depth, out_channels);
     return layer;
 }
 
@@ -1332,12 +1334,17 @@ void load_convolutional_weights(layer l, FILE *fp)
         //return;
     }
     int num = l.nweights;
-    fread(l.biases, sizeof(float), l.n, fp);
+    int read_bytes;
+    read_bytes = fread(l.biases, sizeof(float), l.n, fp);
+    if (read_bytes > 0 && read_bytes < l.n) printf("\n Warning: Unexpected end of wights-file! l.biases - l.index = %d \n", l.index);
     //fread(l.weights, sizeof(float), num, fp); // as in connected layer
     if (l.batch_normalize && (!l.dontloadscales)){
-        fread(l.scales, sizeof(float), l.n, fp);
-        fread(l.rolling_mean, sizeof(float), l.n, fp);
-        fread(l.rolling_variance, sizeof(float), l.n, fp);
+        read_bytes = fread(l.scales, sizeof(float), l.n, fp);
+        if (read_bytes > 0 && read_bytes < l.n) printf("\n Warning: Unexpected end of wights-file! l.scales - l.index = %d \n", l.index);
+        read_bytes = fread(l.rolling_mean, sizeof(float), l.n, fp);
+        if (read_bytes > 0 && read_bytes < l.n) printf("\n Warning: Unexpected end of wights-file! l.rolling_mean - l.index = %d \n", l.index);
+        read_bytes = fread(l.rolling_variance, sizeof(float), l.n, fp);
+        if (read_bytes > 0 && read_bytes < l.n) printf("\n Warning: Unexpected end of wights-file! l.rolling_variance - l.index = %d \n", l.index);
         if(0){
             int i;
             for(i = 0; i < l.n; ++i){
@@ -1354,7 +1361,8 @@ void load_convolutional_weights(layer l, FILE *fp)
             fill_cpu(l.n, 0, l.rolling_variance, 1);
         }
     }
-    fread(l.weights, sizeof(float), num, fp);
+    read_bytes = fread(l.weights, sizeof(float), num, fp);
+    if (read_bytes > 0 && read_bytes < l.n) printf("\n Warning: Unexpected end of wights-file! l.weights - l.index = %d \n", l.index);
     //if(l.adam){
     //    fread(l.m, sizeof(float), num, fp);
     //    fread(l.v, sizeof(float), num, fp);
@@ -1471,8 +1479,9 @@ void load_weights_upto(network *net, char *filename, int cutoff)
             }
 #endif
         }
+        if (feof(fp)) break;
     }
-    fprintf(stderr, "Done!\n");
+    fprintf(stderr, "Done! Loaded %d layers from weights-file \n", i);
     fclose(fp);
 }
 
